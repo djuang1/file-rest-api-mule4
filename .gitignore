@@ -42,6 +42,8 @@ local.properties
 # Studio-specific #
 # --------------- #
 target/
+test/
+src/test/
 .mule/**
 .mule/**/*
 .DS_Store

@@ -36,7 +36,7 @@ baseUri: http://localhost:8081/api
           fileName: 
             description: The name of the file to be uploaded.
             type: file
-            fileTypes: ['image/png']
+            fileTypes: ['*/*']
             maxLength: 10485760 # 10 MB = 10485760 Bytes
     responses: 
         200:
@@ -45,5 +45,6 @@ baseUri: http://localhost:8081/api
               example:
                 { 
                   "status" : "Success",
-                  "file_id" : "DCL5K46FS3OIxb5iuKby" 
+                  "file_id" : "DCL5K46FS3OIxb5iuKby", 
+                  "fileName": "Hello.pdf"
                 } 
