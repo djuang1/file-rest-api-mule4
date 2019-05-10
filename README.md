@@ -4,7 +4,7 @@ This project is an example of a File REST API that shows how to POST a file. It 
 
 ### HTTP POST Request
 
-When making the POST rquest, set the body to **form-data** and make sure the **key** for the file is named **fileName**
+When making the POST request, set the body to **form-data** and make sure the **key** for the file is named **fileName**
 
 <img src="https://raw.githubusercontent.com/djuang1/file-rest-api-mule4/master/docs/fileName.png" width="500"/>
 
