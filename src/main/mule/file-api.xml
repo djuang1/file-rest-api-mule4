@@ -142,6 +142,7 @@ output application/json
         <logger level="INFO" message="get:\file\(file_id):file-api-config" />
     </flow>
     <flow name="post:\file:multipart\form-data:file-api-config">
+		<logger level="INFO" doc:name="Logger" doc:id="9fcc9ad8-8f41-4a87-8068-ea4bc2c9da68" />
 		<ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="03e80766-f724-4575-bc03-0be29efb06df">
             <ee:message>
             </ee:message>
