@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd  http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd  http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+<mule xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd  http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd  http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
     <http:listener-config name="file-api-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="8081" />
     </http:listener-config>
-    <apikit:config name="file-api-config" raml="file-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus"/>
+    <apikit:config name="file-api-config" api="resource::b85b361d-0842-4b70-af37-2723c2c3ae7e:file-api:1.0.0:raml:zip:file-api.raml" raml="file-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <file:config name="File_Config" doc:name="File Config" doc:id="d0e8950a-b9af-4faf-b58a-6d2481a343c2" />
     <configuration-properties doc:name="Configuration properties" doc:id="500470f1-e182-492a-bf70-c3cf06294fc0" file="mule-app.properties" />
+    <api-gateway:autodiscovery apiId="19248399" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="7dfd83d9-79d9-4b91-a9b3-264d11bb407f" flowRef="file-api-main" />
 	<flow name="file-api-main">
         <http:listener config-ref="file-api-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
@@ -125,50 +127,72 @@ output application/json
             </on-error-propagate>
         </error-handler>
     </flow>
-    <flow name="delete:\file\(file_id):file-api-config">
-        <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="d040abc5-3229-48f9-ac43-0bc4b39db80b">
+    <flow name="post:\file:multipart\form-data:file-api-config">
+        <logger level="INFO" doc:name="Logger" doc:id="9fcc9ad8-8f41-4a87-8068-ea4bc2c9da68" />
+        <ee:transform xsi:schemaLocation=" http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="03e80766-f724-4575-bc03-0be29efb06df">
+            <ee:message />
+            <ee:variables>
+                <ee:set-variable variableName="fileInfo"><![CDATA[%dw 2.0
+output application/json
+---
+{
+  status: "Success",
+  fileName: payload.parts.'fileName'.headers.'Content-Disposition'.filename
+}]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <file:write doc:name="Write" doc:id="ba4dab9f-d4e5-4cc4-9640-2395e7ab173e" config-ref="File_Config" path="#[&quot;${mule.home}/apps/${app.name}/files/&quot; ++ (vars.fileInfo.fileName default '')]">
+            <file:content><![CDATA[#[output application/java 
+--- 
+payload.parts.'fileName'.content]]]></file:content>
+        </file:write>
+        <ee:transform doc:name="Transform Message" doc:id="ca2e4ee6-37ce-4d7d-98fc-3411f666c35b">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+vars.fileInfo]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="get:\file:file-api-config">
+        <file:list doc:name="List" doc:id="ac114c6d-1a28-49b2-b0a1-c902d3b36bf5" directoryPath="#[&quot;${mule.home}/apps/${app.name}/files/&quot;]" />
+        <ee:transform doc:name="Transform Message" doc:id="0145bbd3-4894-4e91-aa55-9922e4ab20ac">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload map {
+	"fileName": $.attributes.fileName,
+	"size": $.attributes.size
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="delete:\file\(fileName):file-api-config">
+        <ee:transform doc:name="Transform Message">
+            <ee:variables>
+                <ee:set-variable variableName="fileName">attributes.uriParams.'fileName'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <ee:transform doc:name="Transform Message">
             <ee:message>
                 <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
   status: "Success",
-  file_id: "DCL5K46FS3OIxb5iuKby"
-}]]></ee:set-payload>
+  fileName: "Hello.pdf"
+} as Object {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
             </ee:message>
         </ee:transform>
     </flow>
-    <flow name="get:\file\(file_id):file-api-config">
-        <logger level="INFO" message="get:\file\(file_id):file-api-config" />
-    </flow>
-    <flow name="post:\file:multipart\form-data:file-api-config">
-		<logger level="INFO" doc:name="Logger" doc:id="9fcc9ad8-8f41-4a87-8068-ea4bc2c9da68" />
-		<ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="03e80766-f724-4575-bc03-0be29efb06df">
-            <ee:message>
-            </ee:message>
-			<ee:variables >
-				<ee:set-variable variableName="fileInfo" ><![CDATA[%dw 2.0
-output application/json
----
-{
-  status: "Success",
-  file_id: "DCL5K46FS3OIxb5iuKby",
-  fileName: payload.parts.'fileName'.headers.'Content-Disposition'.filename
-}]]></ee:set-variable>
-			</ee:variables>
+    <flow name="get:\file\(fileName):file-api-config">
+        <ee:transform doc:name="Transform Message">
+            <ee:variables>
+                <ee:set-variable variableName="fileName">attributes.uriParams.'fileName'</ee:set-variable>
+            </ee:variables>
         </ee:transform>
-		<file:write doc:name="Write" doc:id="ba4dab9f-d4e5-4cc4-9640-2395e7ab173e" config-ref="File_Config" path="#[p('file.base') ++ &quot;/src/main/resources/input/&quot; ++ (vars.fileInfo.fileName default '')]" >
-			<file:content ><![CDATA[#[output application/java 
---- 
-payload.parts.'fileName'.content]]]></file:content>
-		</file:write>
-		<ee:transform doc:name="Transform Message" doc:id="ca2e4ee6-37ce-4d7d-98fc-3411f666c35b" >
-			<ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
-output application/json
----
-vars.fileInfo]]></ee:set-payload>
-			</ee:message>
-		</ee:transform>
+        <logger level="INFO" message="get:\file\(fileName):file-api-config" />
     </flow>
 </mule>
